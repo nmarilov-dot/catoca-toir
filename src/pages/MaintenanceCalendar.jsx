@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { 
   format, 
   addMonths, 
@@ -9,22 +8,21 @@ import {
   endOfWeek, 
   isSameMonth, 
   isSameDay, 
-  addDays, 
   eachDayOfInterval,
-  parseISO
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { MOCK_TICKETS, MOCK_EQUIPMENT } from '../api/mockData';
+import { getEquipmentName, safeParseISO } from '../utils/helpers';
 import { 
   ChevronLeft, 
   ChevronRight, 
   Calendar as CalendarIcon, 
   Wrench, 
   Clock, 
-  AlertTriangle,
   CheckCircle2,
   X
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 const MaintenanceCalendar = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -34,38 +32,36 @@ const MaintenanceCalendar = () => {
   // Get all PPM tickets
   const ppmTickets = MOCK_TICKETS.filter(t => t.type === 'ppm');
 
-  const getEquipmentName = (id) => MOCK_EQUIPMENT.find(e => e.id === id)?.name || 'Неизвестно';
-
   const renderHeader = () => {
     return (
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-primary/10 rounded-xl">
+          <div className="p-3 bg-primary/20 rounded-xl">
             <CalendarIcon className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-text-main">График ППР</h1>
+            <h1 className="text-2xl font-bold text-white">График ППР</h1>
             <p className="text-text-muted text-sm capitalize">
               {format(currentMonth, 'LLLL yyyy', { locale: ru })}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-surface-app border border-border-app rounded-xl p-1 shadow-sm">
+        <div className="flex items-center gap-2 bg-dark-surface border border-dark-border rounded-xl p-1">
           <button 
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-2 hover:bg-bg-app rounded-lg transition-colors text-text-muted hover:text-text-main"
+            className="p-2 hover:bg-dark-bg rounded-lg transition-colors text-text-muted hover:text-white"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button 
             onClick={() => setCurrentMonth(new Date())}
-            className="px-3 py-1 text-xs font-medium hover:bg-bg-app rounded-lg transition-colors text-text-muted hover:text-text-main"
+            className="px-3 py-1 text-xs font-medium hover:bg-dark-bg rounded-lg transition-colors text-text-muted hover:text-white"
           >
             Сегодня
           </button>
           <button 
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-bg-app rounded-lg transition-colors text-text-muted hover:text-text-main"
+            className="p-2 hover:bg-dark-bg rounded-lg transition-colors text-text-muted hover:text-white"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -99,9 +95,9 @@ const MaintenanceCalendar = () => {
     });
 
     return (
-      <div className="grid grid-cols-7 gap-px bg-border-app border border-border-app rounded-2xl overflow-hidden shadow-lg">
+      <div className="grid grid-cols-7 gap-px bg-border-app border border-border-app rounded-2xl overflow-hidden shadow-2xl">
         {calendarDays.map((day, i) => {
-          const dayTickets = ppmTickets.filter(t => isSameDay(parseISO(t.createdAt), day));
+          const dayTickets = ppmTickets.filter(t => isSameDay(safeParseISO(t.createdAt), day));
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isSelected = isSameDay(day, selectedDate);
           const isToday = isSameDay(day, new Date());
@@ -109,8 +105,8 @@ const MaintenanceCalendar = () => {
           return (
             <div
               key={i}
-              className={`min-h-[120px] bg-surface-app p-2 transition-colors relative group cursor-pointer
-                ${!isCurrentMonth ? 'opacity-40 bg-bg-app/50' : 'hover:bg-surface-app-light'}
+              className={`min-h-[120px] bg-dark-surface p-2 transition-colors relative group cursor-pointer
+                ${!isCurrentMonth ? 'opacity-30 bg-dark-bg/50' : 'hover:bg-dark-surface-light'}
                 ${isSelected ? 'ring-2 ring-primary ring-inset z-10' : ''}
               `}
               onClick={() => setSelectedDate(day)}
@@ -138,7 +134,7 @@ const MaintenanceCalendar = () => {
                     }}
                     className={`text-[10px] p-1.5 rounded-md border truncate transition-all
                       ${ticket.status === 'completed' 
-                        ? 'bg-green-500/10 border-green-500/20 text-green-600 opacity-70' 
+                        ? 'bg-green-500/10 border-green-500/20 text-green-400 opacity-60' 
                         : 'bg-accent-yellow/10 border-accent-yellow/30 text-accent-yellow hover:scale-[1.02]'
                       }
                     `}
@@ -155,56 +151,56 @@ const MaintenanceCalendar = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 h-full overflow-y-auto custom-scrollbar bg-bg-app">
+    <div className="p-4 md:p-8 h-full overflow-y-auto custom-scrollbar bg-dark-bg">
       {renderHeader()}
       
-      <div className="bg-surface-app border border-border-app rounded-3xl p-4 md:p-6 shadow-xl">
+      <div className="bg-dark-surface border border-dark-border rounded-3xl p-4 md:p-6 shadow-xl">
         {renderDays()}
         {renderCells()}
       </div>
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-        <div className="bg-surface-app border border-border-app rounded-2xl p-6 shadow-lg">
-          <h3 className="text-lg font-bold text-text-main mb-4 flex items-center gap-2">
+        <div className="bg-dark-surface border border-dark-border rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary" /> План на {format(selectedDate, 'd MMMM', { locale: ru })}
           </h3>
           <div className="space-y-3">
-            {ppmTickets.filter(t => isSameDay(parseISO(t.createdAt), selectedDate)).length > 0 ? (
-              ppmTickets.filter(t => isSameDay(parseISO(t.createdAt), selectedDate)).map(ticket => (
+            {ppmTickets.filter(t => isSameDay(safeParseISO(t.createdAt), selectedDate)).length > 0 ? (
+              ppmTickets.filter(t => isSameDay(safeParseISO(t.createdAt), selectedDate)).map(ticket => (
                 <div 
                   key={ticket.id}
-                  className="bg-bg-app border border-border-app rounded-xl p-4 flex justify-between items-center group hover:border-primary/50 transition-all cursor-pointer shadow-sm"
+                  className="bg-bg-app border border-border-app rounded-xl p-4 flex justify-between items-center group hover:border-primary/50 transition-all cursor-pointer"
                   onClick={() => setActiveTicket(ticket)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${ticket.status === 'completed' ? 'bg-green-500/10' : 'bg-accent-yellow/10'}`}>
-                      <Wrench className={`w-5 h-5 ${ticket.status === 'completed' ? 'text-green-600' : 'text-accent-yellow'}`} />
+                    <div className={`p-2 rounded-lg ${ticket.status === 'completed' ? 'bg-green-500/20' : 'bg-accent-yellow/20'}`}>
+                      <Wrench className={`w-5 h-5 ${ticket.status === 'completed' ? 'text-green-400' : 'text-accent-yellow'}`} />
                     </div>
                     <div>
-                      <p className="text-text-main font-bold group-hover:text-primary transition-colors">
+                      <p className="text-white font-bold group-hover:text-primary transition-colors">
                         {getEquipmentName(ticket.equipmentId)}
                       </p>
                       <p className="text-xs text-text-muted mt-1">{ticket.description}</p>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-border-app group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-dark-border group-hover:text-primary transition-colors" />
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 border border-dashed border-border-app rounded-xl text-text-muted italic">
+              <div className="text-center py-8 border border-dashed border-dark-border rounded-xl text-text-muted italic">
                 На выбранную дату работ не запланировано
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-surface-app border border-border-app rounded-2xl p-6 shadow-lg">
-          <h3 className="text-lg font-bold text-text-main mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-600" /> Статус выполнения (Месяц)
+        <div className="bg-dark-surface border border-dark-border rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-400" /> Статус выполнения (Месяц)
           </h3>
           <div className="space-y-4">
             {(() => {
-              const monthTickets = ppmTickets.filter(t => isSameMonth(parseISO(t.createdAt), currentMonth));
+              const monthTickets = ppmTickets.filter(t => isSameMonth(safeParseISO(t.createdAt), currentMonth));
               const completed = monthTickets.filter(t => t.status === 'completed').length;
               const total = monthTickets.length;
               const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -213,23 +209,23 @@ const MaintenanceCalendar = () => {
                 <>
                   <div className="flex justify-between items-end mb-2">
                     <div>
-                      <span className="text-3xl font-bold text-text-main">{completed}</span>
+                      <span className="text-3xl font-bold text-white">{completed}</span>
                       <span className="text-text-muted text-sm ml-2">из {total} выполнено</span>
                     </div>
                     <span className="text-primary font-black text-xl">{percent}%</span>
                   </div>
-                  <div className="w-full h-3 bg-bg-app rounded-full overflow-hidden border border-border-app">
+                  <div className="w-full h-3 bg-dark-bg rounded-full overflow-hidden border border-dark-border">
                     <div 
-                      className="h-full bg-primary transition-all duration-1000"
+                      className="h-full bg-primary shadow-[0_0_10px_rgba(134,59,255,0.5)] transition-all duration-1000"
                       style={{ width: `${percent}%` }}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="bg-bg-app p-3 rounded-xl border border-border-app shadow-sm">
+                    <div className="bg-dark-bg p-3 rounded-xl border border-dark-border">
                       <p className="text-[10px] text-text-muted uppercase font-bold tracking-tighter">В процессе</p>
                       <p className="text-xl font-bold text-accent-yellow">{total - completed}</p>
                     </div>
-                    <div className="bg-bg-app p-3 rounded-xl border border-border-app shadow-sm">
+                    <div className="bg-dark-bg p-3 rounded-xl border border-dark-border">
                       <p className="text-[10px] text-text-muted uppercase font-bold tracking-tighter">Критично</p>
                       <p className="text-xl font-bold text-accent-red">2</p>
                     </div>
@@ -242,16 +238,22 @@ const MaintenanceCalendar = () => {
       </div>
 
       {activeTicket && (
-        <div className="fixed inset-0 bg-text-main/20 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-surface-app border border-border-app rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="p-6 border-b border-border-app flex justify-between items-center bg-bg-app/30">
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setActiveTicket(null)}
+        >
+          <div 
+            className="bg-surface-app border border-border-app rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-border-app flex justify-between items-center bg-bg-app/50">
               <div className="flex items-center gap-3">
                 <Wrench className="w-6 h-6 text-accent-yellow" />
-                <h2 className="text-xl font-bold text-text-main">Детали ППР</h2>
+                <h2 className="text-xl font-bold text-white">Детали ППР</h2>
               </div>
               <button 
                 onClick={() => setActiveTicket(null)}
-                className="p-2 hover:bg-bg-app rounded-xl transition-colors text-text-muted hover:text-text-main"
+                className="p-2 hover:bg-dark-bg rounded-xl transition-colors text-text-muted hover:text-white"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -259,21 +261,21 @@ const MaintenanceCalendar = () => {
             <div className="p-8 space-y-6">
               <div>
                 <label className="text-xs text-text-muted uppercase font-bold tracking-widest block mb-2">Оборудование</label>
-                <div className="text-2xl font-bold text-text-main">{getEquipmentName(activeTicket.equipmentId)}</div>
+                <div className="text-2xl font-bold text-white">{getEquipmentName(activeTicket.equipmentId)}</div>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs text-text-muted uppercase font-bold tracking-widest block mb-2">Дата создания</label>
                   <div className="text-text-main flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4 text-primary" />
-                    {format(parseISO(activeTicket.createdAt), 'dd MMMM yyyy', { locale: ru })}
+                    {format(safeParseISO(activeTicket.createdAt), 'dd MMMM yyyy', { locale: ru })}
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-text-muted uppercase font-bold tracking-widest block mb-2">Статус</label>
                   <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border
                     ${activeTicket.status === 'completed' 
-                      ? 'bg-green-500/10 border-green-500/30 text-green-600' 
+                      ? 'bg-green-500/10 border-green-500/30 text-green-400' 
                       : 'bg-accent-yellow/10 border-accent-yellow/30 text-accent-yellow'
                     }
                   `}>
@@ -283,7 +285,7 @@ const MaintenanceCalendar = () => {
               </div>
               <div>
                 <label className="text-xs text-text-muted uppercase font-bold tracking-widest block mb-2">Описание работ</label>
-                <div className="bg-bg-app p-4 rounded-xl border border-border-app text-text-main leading-relaxed">
+                <div className="bg-dark-bg p-4 rounded-xl border border-dark-border text-gray-300 leading-relaxed">
                   {activeTicket.description}
                 </div>
               </div>
@@ -295,7 +297,7 @@ const MaintenanceCalendar = () => {
                   Перейти к тикету
                 </button>
                 <button 
-                  className="px-6 py-4 bg-surface-app border border-border-app text-text-main rounded-2xl font-bold hover:bg-surface-app-light transition-all"
+                  className="px-6 py-4 bg-dark-bg border border-dark-border text-white rounded-2xl font-bold hover:bg-dark-surface-light transition-all"
                   onClick={() => setActiveTicket(null)}
                 >
                   Закрыть
