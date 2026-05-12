@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import MaterialRequests from './pages/MaterialRequests';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Reports from './pages/Reports';
+import MaintenanceCalendar from './pages/MaintenanceCalendar';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -35,6 +36,7 @@ function App() {
           <Route path="materials" element={<MaterialRequests />} />
           <Route path="knowledge" element={<KnowledgeBase />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="calendar" element={<MaintenanceCalendar />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
