@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   FileText,
   BookOpen,
-  Box
+  Box,
+  Calendar
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -30,10 +31,16 @@ const DashboardLayout = () => {
     { name: 'Главная', path: '/', icon: LayoutDashboard },
     { name: 'Оборудование', path: '/equipment', icon: Wrench },
     { name: 'Тикеты (ППР / Аварии)', path: '/tickets', icon: AlertTriangle },
+    { name: 'Календарь ППР', path: '/calendar', icon: Calendar },
     { name: 'Заявки ТМЦ', path: '/materials', icon: Box },
     { name: 'Отчеты', path: '/reports', icon: FileText },
     { name: 'База знаний', path: '/knowledge', icon: BookOpen },
   ];
+
+  // Добавляем настройки только для администратора
+  if (user?.role === 'admin') {
+    navItems.push({ name: 'Настройки системы', path: '/admin', icon: Settings });
+  }
 
   const NavLinks = ({ onClick }) => (
     <div className="space-y-1 mt-6">
