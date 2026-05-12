@@ -11,12 +11,6 @@
   --color-dark-border: #374151;
   --color-text-main: #f3f4f6;
   --color-text-muted: #9ca3af;
-  
-  /* Алиасы для обратной совместимости */
-  --color-bg-app: #111827;
-  --color-surface-app: #1f2937;
-  --color-surface-app-light: #374151;
-  --color-border-app: #374151;
 }
 
 body {

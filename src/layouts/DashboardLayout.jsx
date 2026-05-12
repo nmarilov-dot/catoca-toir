@@ -13,8 +13,7 @@ import {
   AlertTriangle,
   FileText,
   BookOpen,
-  Box,
-  Calendar
+  Box
 } from 'lucide-react';
 
 const DashboardLayout = () => {
