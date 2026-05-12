@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MOCK_EQUIPMENT, MOCK_TICKETS } from '../api/mockData';
+import { MOCK_EQUIPMENT, MOCK_TICKETS, MOCK_DOWNTIME_LOG } from '../api/mockData';
 import { 
   Activity, 
   AlertTriangle, 
@@ -8,283 +8,252 @@ import {
   ChevronRight,
   Settings2,
   Wrench,
-  X
+  TrendingUp,
+  Plus,
+  Search,
+  Bell,
+  Map as MapIcon,
+  Maximize2,
+  Zap,
+  Cpu,
+  Settings
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, subDays, isWithinInterval } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-// Custom SVG Donut Chart
-const DonutChart = ({ working, ppm, broken }) => {
-  const total = working + ppm + broken;
-  if (!total) return null;
-  
-  const wPct = (working / total) * 100;
-  const pPct = (ppm / total) * 100;
-  const bPct = (broken / total) * 100;
-
-  const r = 15.91549430918954; // circumference = 100
-  const wDash = wPct;
-  const pDash = pPct;
-  const bDash = bPct;
-
-  return (
-    <div className="relative w-48 h-48 mx-auto">
-      <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
-        {/* Background circle */}
-        <circle cx="21" cy="21" r={r} fill="transparent" stroke="#f1f5f9" strokeWidth="6" />
-        
-        {/* Segments */}
-        {working > 0 && (
-          <circle cx="21" cy="21" r={r} fill="transparent" stroke="#22c55e" strokeWidth="6" strokeDasharray={`${wDash} ${100 - wDash}`} strokeDashoffset="0" className="transition-all duration-1000 ease-out" />
-        )}
-        {ppm > 0 && (
-          <circle cx="21" cy="21" r={r} fill="transparent" stroke="#eab308" strokeWidth="6" strokeDasharray={`${pDash} ${100 - pDash}`} strokeDashoffset={`-${wDash}`} className="transition-all duration-1000 ease-out" />
-        )}
-        {broken > 0 && (
-          <circle cx="21" cy="21" r={r} fill="transparent" stroke="#ef4444" strokeWidth="6" strokeDasharray={`${bDash} ${100 - bDash}`} strokeDashoffset={`-${wDash + pDash}`} className="transition-all duration-1000 ease-out" />
-        )}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-3xl font-bold text-text-main">{Math.round(wPct)}%</span>
-        <span className="text-xs text-text-muted font-medium">В работе</span>
-      </div>
-    </div>
-  );
-};
-
 const Dashboard = () => {
-  const [activeModal, setActiveModal] = useState(null);
+  const [activeTab, setActiveTab] = useState('month');
 
-  // Calculations
+  // Logic for calculations
   const equipment = MOCK_EQUIPMENT.filter(e => e.isEquipment);
-  const totalEq = equipment.length;
-  const workingEq = equipment.filter(e => e.status === 'working').length;
-  const ppmEq = equipment.filter(e => e.status === 'ppm').length;
-  const brokenEq = equipment.filter(e => e.status === 'not_working').length;
-
-  const workingPercent = totalEq ? Math.round((workingEq / totalEq) * 100) : 0;
-
-  const activeAccidents = MOCK_TICKETS.filter(t => t.type === 'accident' && t.status !== 'completed').length;
-  const activePPMs = MOCK_TICKETS.filter(t => t.type === 'ppm' && t.status !== 'completed').length;
-
-  const recentTickets = [...MOCK_TICKETS]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
-
+  const accidents = MOCK_TICKETS.filter(t => t.type === 'accident' && t.status !== 'completed');
+  const ppms = MOCK_TICKETS.filter(t => t.type === 'ppm' && t.status !== 'completed');
+  
+  const totalAvailability = 94.2; // Mocked for design
+  
   const getEquipmentName = (id) => MOCK_EQUIPMENT.find(e => e.id === id)?.name || 'Неизвестно';
 
   return (
-    <div className="p-4 md:p-8 h-full overflow-y-auto custom-scrollbar bg-bg-app">
+    <div className="p-6 lg:p-8 space-y-8 bg-bg-app animate-in fade-in duration-500">
       
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-text-main flex items-center gap-3">
-          <Activity className="text-primary w-8 h-8" />
-          Сводка по предприятию
-        </h1>
-        <p className="text-text-muted mt-2 font-medium">Оперативная картина состояния оборудования и заявок</p>
-      </div>
-
-      {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-surface-app border border-border-app rounded-2xl p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full group-hover:scale-110 transition-transform"></div>
-          <div className="flex justify-between items-start mb-4 relative">
-            <div className="p-3 bg-primary/10 rounded-xl">
-              <Settings2 className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-[10px] font-bold bg-bg-app border border-border-app px-2 py-1 rounded-full text-text-muted uppercase tracking-tighter">Всего</span>
-          </div>
-          <h3 className="text-3xl font-bold text-text-main mb-1 relative">{totalEq}</h3>
-          <p className="text-sm text-text-muted relative">Единиц оборудования</p>
-        </div>
-
-        <div className="bg-surface-app border border-border-app rounded-2xl p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-green-500/5 rounded-full group-hover:scale-110 transition-transform"></div>
-          <div className="flex justify-between items-start mb-4 relative">
-            <div className="p-3 bg-green-500/10 rounded-xl">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <span className="text-[10px] font-bold bg-bg-app border border-border-app px-2 py-1 rounded-full text-text-muted uppercase tracking-tighter">Исправно</span>
-          </div>
-          <h3 className="text-3xl font-bold text-text-main mb-1 relative">{workingPercent}%</h3>
-          <p className="text-sm text-text-muted relative">{workingEq} машин в работе</p>
-        </div>
-
-        <div 
-          onClick={() => setActiveModal('ppm')}
-          className="bg-surface-app border border-border-app rounded-2xl p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:border-accent-yellow/50 transition-colors"
-        >
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent-yellow/5 rounded-full group-hover:scale-110 transition-transform pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-4 relative">
-            <div className="p-3 bg-accent-yellow/10 rounded-xl">
-              <Wrench className="w-6 h-6 text-accent-yellow" />
-            </div>
-            <span className="text-[10px] font-bold bg-bg-app border border-border-app px-2 py-1 rounded-full text-text-muted uppercase tracking-tighter">В ремонте</span>
-          </div>
-          <h3 className="text-3xl font-bold text-text-main mb-1 relative">{activePPMs}</h3>
-          <p className="text-sm text-text-muted relative">Активных ППР</p>
-        </div>
-
-        <div 
-          onClick={() => setActiveModal('accident')}
-          className="bg-surface-app border border-border-app rounded-2xl p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:border-accent-red/50 transition-colors"
-        >
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent-red/5 rounded-full group-hover:scale-110 transition-transform pointer-events-none"></div>
-          <div className="flex justify-between items-start mb-4 relative">
-            <div className="p-3 bg-accent-red/10 rounded-xl">
-              <AlertTriangle className="w-6 h-6 text-accent-red" />
-            </div>
-            <span className="text-[10px] font-bold bg-bg-app border border-border-app px-2 py-1 rounded-full text-text-muted uppercase tracking-tighter">Остановлено</span>
-          </div>
-          <h3 className="text-3xl font-bold text-text-main mb-1 relative">{activeAccidents}</h3>
-          <p className="text-sm text-text-muted relative">Аварийных простоев</p>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      {/* Hero Bento Grid */}
+      <div className="grid grid-cols-12 gap-6">
         
-        {/* Left Column: Charts */}
-        <div className="lg:col-span-1 space-y-8">
-          
-          {/* Equipment Status Chart */}
-          <div className="bg-surface-app border border-border-app rounded-2xl p-6 shadow-sm flex flex-col h-full">
-            <h3 className="text-lg font-bold text-text-main mb-6">Статус парка машин</h3>
-            
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <DonutChart working={workingEq} ppm={ppmEq} broken={brokenEq} />
-            </div>
-            
-            <div className="mt-8 space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                  <span className="text-text-muted font-medium">В работе</span>
-                </div>
-                <span className="font-bold text-text-main">{workingEq}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-accent-yellow"></span>
-                  <span className="text-text-muted font-medium">Плановый ремонт</span>
-                </div>
-                <span className="font-bold text-text-main">{ppmEq}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-accent-red"></span>
-                  <span className="text-text-muted font-medium">Авария</span>
-                </div>
-                <span className="font-bold text-text-main">{brokenEq}</span>
+        {/* Availability Chart Card */}
+        <div className="col-span-12 lg:col-span-8 bg-surface-app border border-outline-variant rounded-2xl p-6 flex flex-col gap-6 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                ОБЩАЯ ГОТОВНОСТЬ / DISPONIBILIDADE GERAL
+              </h3>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl lg:text-5xl font-black text-primary">{totalAvailability}%</span>
+                <span className="text-green-600 font-bold text-sm flex items-center gap-0.5">
+                  <TrendingUp className="w-4 h-4" /> +1.4%
+                </span>
               </div>
             </div>
-          </div>
-
-        </div>
-
-        {/* Right Column: Feed and Lists */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Recent Tickets Feed */}
-          <div className="bg-surface-app border border-border-app rounded-2xl p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-text-main">Последние тикеты</h3>
-              <Link to="/tickets" className="text-sm text-primary hover:text-primary-dark font-bold flex items-center gap-1 transition-colors">
-                Все тикеты <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="space-y-4">
-              {recentTickets.length > 0 ? recentTickets.map(ticket => (
-                <Link 
-                  key={ticket.id} 
-                  to="/tickets"
-                  className="block bg-bg-app border border-border-app rounded-xl p-4 hover:border-primary/50 transition-all group shadow-sm hover:shadow-md"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${ticket.type === 'accident' ? 'bg-accent-red/10' : 'bg-accent-yellow/10'}`}>
-                        {ticket.type === 'accident' ? <AlertTriangle className="w-5 h-5 text-accent-red" /> : <Wrench className="w-5 h-5 text-accent-yellow" />}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-text-main group-hover:text-primary transition-colors">{getEquipmentName(ticket.equipmentId)}</h4>
-                        <div className="flex items-center gap-2 text-xs text-text-muted mt-1">
-                          <span className={`px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${ticket.type === 'accident' ? 'text-accent-red bg-accent-red/5' : 'text-accent-yellow bg-accent-yellow/5'}`}>
-                            {ticket.type === 'accident' ? 'Авария' : 'ППР'}
-                          </span>
-                          <span className="flex items-center gap-1 font-medium"><Clock className="w-3 h-3"/> {format(new Date(ticket.createdAt), 'dd MMM HH:mm', { locale: ru })}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] px-3 py-1 rounded-lg border font-bold ${
-                      ticket.status === 'completed' ? 'border-green-500/20 text-green-600 bg-green-500/5' : 'border-border-app bg-surface-app text-text-muted'
-                    }`}>
-                      {ticket.status === 'completed' ? 'ВЫПОЛНЕНО' : 'В ПРОЦЕССЕ'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-text-muted mt-3 pl-[3.25rem] truncate font-medium">{ticket.description}</p>
-                </Link>
-              )) : (
-                <div className="text-center text-text-muted py-8 italic border border-dashed border-border-app rounded-xl">
-                  Активных инцидентов нет
-                </div>
-              )}
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Modal for viewing tickets by category */}
-      {activeModal && (
-        <div className="fixed inset-0 bg-text-main/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-app border border-border-app rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-4 border-b border-border-app flex justify-between items-center bg-bg-app/30">
-              <h2 className="font-bold text-lg flex items-center gap-2 text-text-main">
-                {activeModal === 'accident' ? <AlertTriangle className="text-accent-red w-5 h-5" /> : <Wrench className="text-accent-yellow w-5 h-5" />}
-                {activeModal === 'accident' ? 'Аварийные простои' : 'Плановые ремонты (ППР)'}
-              </h2>
-              <button onClick={() => setActiveModal(null)} className="text-text-muted hover:text-text-main p-1 rounded-lg hover:bg-bg-app transition-colors">
-                <X className="w-6 h-6" />
+            <div className="flex gap-1 bg-surface-container p-1 rounded-lg">
+              <button 
+                onClick={() => setActiveTab('week')}
+                className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeTab === 'week' ? 'bg-primary text-white' : 'text-on-surface-variant hover:bg-white/50'}`}
+              >
+                НЕДЕЛЯ
+              </button>
+              <button 
+                onClick={() => setActiveTab('month')}
+                className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeTab === 'month' ? 'bg-primary text-white' : 'text-on-surface-variant hover:bg-white/50'}`}
+              >
+                МЕСЯЦ
               </button>
             </div>
-            
-            <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-3 bg-bg-app/10">
-              {MOCK_TICKETS
-                .filter(t => t.type === activeModal && t.status !== 'completed')
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .map(ticket => (
-                  <Link 
-                    key={ticket.id} 
-                    to="/tickets"
-                    className="block bg-surface-app border border-border-app rounded-xl p-4 hover:border-primary/50 transition-all group shadow-sm"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-bold text-text-main group-hover:text-primary transition-colors">{getEquipmentName(ticket.equipmentId)}</h4>
-                        <div className="text-xs text-text-muted mt-1 flex items-center gap-1 font-medium">
-                          <Clock className="w-3 h-3"/> {format(new Date(ticket.createdAt), 'dd MMM yyyy, HH:mm', { locale: ru })}
-                        </div>
-                      </div>
-                      <span className="text-[10px] px-2 py-1 bg-bg-app border border-border-app rounded-lg text-text-muted font-bold uppercase tracking-tighter">
-                        {ticket.authorName}
-                      </span>
-                    </div>
-                    <p className="text-sm text-text-muted mt-3 font-medium">{ticket.description}</p>
-                  </Link>
-                ))}
-              
-              {MOCK_TICKETS.filter(t => t.type === activeModal && t.status !== 'completed').length === 0 && (
-                <div className="text-center text-text-muted py-8 italic border border-dashed border-border-app rounded-xl">
-                  Нет активных заявок в данной категории
+          </div>
+
+          {/* Visual Chart Bars */}
+          <div className="h-48 w-full mt-auto flex items-end gap-3 px-2">
+            {[65, 82, 70, 92, 85, 94.2, 0].map((val, i) => (
+              <div key={i} className="flex-1 flex flex-col gap-2 group/bar">
+                <div 
+                  className={`w-full rounded-t-lg transition-all duration-700 ease-out hover:scale-x-105 ${i === 5 ? 'bg-primary' : 'bg-surface-container-high group-hover/bar:bg-primary/20'}`}
+                  style={{ height: `${val}%` }}
+                />
+                <div className="text-[9px] font-bold text-on-surface-variant text-center truncate">
+                  {i === 6 ? 'ЗАВТРА' : `${i + 15} МАЙ`}
                 </div>
-              )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Critical Incidents Card */}
+        <div className="col-span-12 lg:col-span-4 bg-surface-app border border-outline-variant rounded-2xl p-6 flex flex-col gap-6 shadow-sm">
+          <div className="flex justify-between items-center">
+            <h3 className="text-[11px] font-bold text-error uppercase tracking-widest">
+              КРИТИЧЕСКИЕ ИНЦИДЕНТЫ / AVARIAS
+            </h3>
+            <span className="px-2 py-1 bg-error-container text-on-error-container text-[10px] font-black rounded-full">
+              {accidents.length} ACTIVE
+            </span>
+          </div>
+
+          <div className="space-y-3 overflow-y-auto max-h-[300px] custom-scrollbar-thin pr-2">
+            {accidents.length > 0 ? accidents.map(acc => (
+              <div key={acc.id} className="p-4 rounded-xl border-l-4 border-error bg-error-container/5 hover:bg-error-container/10 transition-colors flex flex-col gap-2">
+                <div className="flex justify-between items-start">
+                  <span className="text-sm font-bold text-on-surface">{getEquipmentName(acc.equipmentId)}</span>
+                  <span className="text-[10px] font-bold text-on-surface-variant">{format(new Date(acc.createdAt), 'HH:mm')}</span>
+                </div>
+                <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">{acc.description}</p>
+              </div>
+            )) : (
+              <div className="text-center py-12 text-text-muted italic border border-dashed border-outline-variant rounded-xl">
+                Критических аварий нет
+              </div>
+            )}
+          </div>
+
+          <Link 
+            to="/tickets"
+            className="mt-auto w-full py-3 border border-outline-variant rounded-xl text-[11px] font-bold text-on-surface-variant hover:bg-surface-container transition-all text-center uppercase tracking-wider"
+          >
+            Посмотреть все (Ver Todos)
+          </Link>
+        </div>
+      </div>
+
+      {/* Service Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Automation */}
+        <div className="bg-surface-app border border-outline-variant rounded-2xl p-5 flex items-center gap-5 shadow-sm hover:border-primary transition-colors cursor-pointer">
+          <div className="w-14 h-14 rounded-2xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
+            <Cpu className="w-7 h-7" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Автоматика</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-on-surface">98.1%</span>
+              <span className="text-[10px] font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">NORMAL</span>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Mechanics */}
+        <div className="bg-surface-app border border-outline-variant rounded-2xl p-5 flex items-center gap-5 shadow-sm hover:border-primary transition-colors cursor-pointer">
+          <div className="w-14 h-14 rounded-2xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
+            <Wrench className="w-7 h-7" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Механика</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-on-surface">89.4%</span>
+              <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded uppercase">Attention</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Electrical */}
+        <div className="bg-surface-app border border-outline-variant rounded-2xl p-5 flex items-center gap-5 shadow-sm hover:border-primary transition-colors cursor-pointer">
+          <div className="w-14 h-14 rounded-2xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
+            <Zap className="w-7 h-7" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Электрика</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-on-surface">95.2%</span>
+              <span className="text-[10px] font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">NORMAL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lower Layout: Work Orders & Map */}
+      <div className="grid grid-cols-12 gap-6 pb-12">
+        
+        {/* Work Orders Table */}
+        <div className="col-span-12 lg:col-span-8 bg-surface-app border border-outline-variant rounded-2xl overflow-hidden flex flex-col shadow-sm">
+          <div className="px-6 py-5 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+            <h3 className="text-lg font-bold text-on-surface">Текущие работы (Ordens de Trabalho)</h3>
+            <Link 
+              to="/tickets"
+              className="bg-primary text-white px-4 py-2 rounded-xl text-[11px] font-bold flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md active:scale-95"
+            >
+              <Plus className="w-4 h-4" /> НОВАЯ ЗАЯВКА
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low text-on-surface-variant text-[10px] font-bold uppercase tracking-widest border-b border-outline-variant">
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Оборудование (Equipamento)</th>
+                  <th className="px-6 py-4">Сервис</th>
+                  <th className="px-6 py-4">Статус</th>
+                  <th className="px-6 py-4">Приоритет</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant">
+                {[...accidents, ...ppms].slice(0, 5).map((ticket) => (
+                  <tr key={ticket.id} className="hover:bg-surface-container-low transition-colors group cursor-pointer">
+                    <td className="px-6 py-5 text-xs font-bold text-on-surface-variant">#{ticket.id.toUpperCase()}</td>
+                    <td className="px-6 py-5">
+                      <div className="text-sm font-bold text-on-surface">{getEquipmentName(ticket.equipmentId)}</div>
+                      <div className="text-[10px] text-on-surface-variant mt-0.5">Участок: Фабрика 2</div>
+                    </td>
+                    <td className="px-6 py-5 text-xs text-on-surface font-medium">{ticket.service}</td>
+                    <td className="px-6 py-5">
+                      <span className="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed text-[10px] font-black rounded-full uppercase">
+                        {ticket.status === 'completed' ? 'DONE' : 'IN PROGRESS'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`font-black text-[10px] ${ticket.type === 'accident' ? 'text-error' : 'text-on-surface-variant'}`}>
+                        {ticket.type === 'accident' ? 'HIGH' : 'MEDIUM'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Map Preview */}
+        <div className="col-span-12 lg:col-span-4 bg-surface-app border border-outline-variant rounded-2xl overflow-hidden flex flex-col shadow-sm group">
+          <div className="px-6 py-5 border-b border-outline-variant bg-surface-container-low">
+            <h3 className="text-lg font-bold text-on-surface">Карта карьера (Localização)</h3>
+          </div>
+          <div className="flex-1 relative min-h-[350px]">
+            <img 
+              className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" 
+              alt="Mining site aerial view"
+              src="https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&q=80&w=1000"
+            />
+            {/* Map Hotspots */}
+            <div className="absolute top-[30%] left-[45%] group/pin cursor-pointer">
+              <div className="w-5 h-5 bg-error rounded-full animate-ping absolute inset-0 opacity-75"></div>
+              <div className="w-5 h-5 bg-error rounded-full border-2 border-white relative"></div>
+              <div className="hidden group-hover/pin:block absolute top-7 left-1/2 -translate-x-1/2 bg-inverse-surface text-white text-[10px] px-3 py-1.5 rounded-lg whitespace-nowrap z-10 shadow-xl border border-outline-variant">
+                Shovel S-02: Failure
+              </div>
+            </div>
+            
+            <div className="absolute bottom-6 left-6 right-6 bg-surface-app/90 backdrop-blur-md border border-outline-variant p-3 rounded-xl flex justify-between items-center shadow-lg">
+              <div className="flex items-center gap-2">
+                <MapIcon className="w-4 h-4 text-primary" />
+                <span className="text-[11px] font-bold text-on-surface">Catoca Mine, Angola</span>
+              </div>
+              <Maximize2 className="w-4 h-4 text-on-surface-variant cursor-pointer hover:text-primary transition-colors" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FAB (Conditional for Dashboard) */}
+      <button className="fixed bottom-8 right-8 w-16 h-16 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+        <Wrench className="w-7 h-7 group-hover:rotate-45 transition-transform" />
+      </button>
+
     </div>
   );
 };
