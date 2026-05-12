@@ -1,176 +1,156 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
-  Wrench, 
-  Cpu, 
-  Zap, 
-  Calendar, 
-  BarChart3, 
   Settings, 
-  LogOut,
-  Bell,
-  Search,
+  LogOut, 
+  Menu, 
+  X,
   HardHat,
-  ChevronRight,
-  Globe,
-  Menu,
-  X
+  Bell,
+  Wrench,
+  AlertTriangle,
+  FileText,
+  BookOpen,
+  Box,
+  Calendar
 } from 'lucide-react';
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const navigate = useNavigate();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const navItems = [
-    { path: '/', label: 'Сводка (Sumário)', icon: LayoutDashboard },
-    { path: '/automation', label: 'Автоматика (Automação)', icon: Cpu },
-    { path: '/mechanics', label: 'Механика (Mecânica)', icon: Wrench },
-    { path: '/electrical', label: 'Электрика (Elétrica)', icon: Zap },
-    { path: '/calendar', label: 'График (Escala)', icon: Calendar },
-    { path: '/reports', label: 'Отчеты (Relatórios)', icon: BarChart3 },
-  ];
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const navItems = [
+    { name: 'Главная', path: '/', icon: LayoutDashboard },
+    { name: 'Оборудование', path: '/equipment', icon: Wrench },
+    { name: 'Тикеты (ППР / Аварии)', path: '/tickets', icon: AlertTriangle },
+    { name: 'Заявки ТМЦ', path: '/materials', icon: Box },
+    { name: 'Отчеты', path: '/reports', icon: FileText },
+    { name: 'База знаний', path: '/knowledge', icon: BookOpen },
+  ];
+
+  const NavLinks = ({ onClick }) => (
+    <div className="space-y-1 mt-6">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            onClick={onClick}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                isActive
+                  ? 'bg-primary/20 text-primary border border-primary/30 font-medium'
+                  : 'text-text-muted hover:bg-dark-surface-light hover:text-text-main'
+              }`
+            }
+          >
+            <Icon className="w-5 h-5" />
+            {item.name}
+          </NavLink>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="flex h-screen bg-bg-app overflow-hidden">
-      
-      {/* Sidebar (Desktop) */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-surface-app border-r border-outline-variant flex flex-col p-6 gap-2 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        
-        {/* Brand & User Profile */}
-        <div className="flex flex-col gap-1 mb-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-              <HardHat className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-lg font-black tracking-tight text-primary">CATOCA</h1>
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Служба ТОиР</p>
-            </div>
+    <div className="min-h-screen bg-dark-bg flex">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-72 bg-dark-surface border-r border-dark-border h-screen sticky top-0">
+        <div className="p-6 flex items-center gap-3 border-b border-dark-border">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <HardHat className="text-white w-6 h-6" />
           </div>
-          
-          <div className="p-3 bg-surface-container rounded-xl flex items-center gap-3 border border-outline-variant/30">
-            <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant">
-               <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                {user?.username?.[0]?.toUpperCase()}
-               </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-on-surface truncate">{user?.username === 'admin' ? 'Admin Engineer' : user?.username}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Online</span>
-              </div>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-wide">CATOCA</h1>
+            <p className="text-xs text-primary font-medium uppercase tracking-widest">Система ТОиР</p>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 flex flex-col gap-1">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                  isActive 
-                    ? 'bg-secondary-container text-on-secondary-container shadow-sm' 
-                    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
-                }`}
-              >
-                <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'text-primary' : 'text-on-surface-variant'}`} />
-                <span className={`text-sm ${isActive ? 'font-black' : 'font-medium'}`}>{item.label}</span>
-                {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
-              </Link>
-            );
-          })}
-          
-          <div className="h-px bg-outline-variant my-4 opacity-50" />
-          
+        <div className="flex-1 px-4 overflow-y-auto">
+          <NavLinks />
+        </div>
+
+        <div className="p-4 border-t border-dark-border">
+          <div className="bg-dark-bg rounded-xl p-4 mb-4 border border-dark-border">
+            <p className="text-sm font-medium text-text-main">{user?.name}</p>
+            <p className="text-xs text-text-muted mt-1">{user?.service || 'Руководство'} • {user?.location}</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl text-error hover:bg-error-container/10 transition-all font-medium mt-auto"
+            className="flex items-center gap-3 px-4 py-2 w-full text-text-muted hover:text-accent-red hover:bg-accent-red/10 rounded-xl transition-colors"
           >
             <LogOut className="w-5 h-5" />
-            <span className="text-sm">Выход (Sair)</span>
-          </button>
-        </nav>
-
-        {/* Footer Settings & Lang */}
-        <div className="mt-8 pt-6 border-t border-outline-variant flex items-center justify-between">
-          <div className="flex gap-1.5">
-            <span className="px-2 py-1 bg-primary text-white text-[9px] font-black rounded-md cursor-pointer hover:opacity-80 transition-opacity">RU</span>
-            <span className="px-2 py-1 bg-surface-container text-on-surface-variant text-[9px] font-black rounded-md cursor-pointer hover:bg-surface-container-high transition-colors">PT</span>
-          </div>
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
-            <Settings className="w-5 h-5" />
+            Выйти
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        
-        {/* Top Header */}
-        <header className="h-16 bg-surface-app border-b border-outline-variant px-6 flex items-center justify-between sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container rounded-lg"
-            >
-              {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-            <div className="flex items-center gap-2">
-               <LayoutDashboard className="w-5 h-5 text-primary lg:hidden" />
-               <h2 className="text-lg font-black text-primary tracking-tight">M&R Catoca</h2>
-            </div>
+      {/* Mobile Header & Overlay */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-dark-surface border-b border-dark-border z-30 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
+            <HardHat className="text-white w-5 h-5" />
           </div>
+          <h1 className="text-lg font-bold">CATOCA</h1>
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-text-muted hover:text-white"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center bg-surface-container px-4 py-2 rounded-xl gap-3 group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-              <Search className="w-4 h-4 text-on-surface-variant group-focus-within:text-primary" />
-              <input 
-                type="text" 
-                placeholder="Поиск оборудования..." 
-                className="bg-transparent border-none focus:ring-0 text-sm w-48 placeholder-on-surface-variant/50 font-medium"
-              />
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-20 bg-dark-bg pt-16 flex flex-col h-screen">
+          <div className="flex-1 px-4 overflow-y-auto">
+            <NavLinks onClick={() => setIsMobileMenuOpen(false)} />
+          </div>
+          <div className="p-4 border-t border-dark-border bg-dark-surface">
+            <div className="mb-4">
+              <p className="text-sm font-medium text-text-main">{user?.name}</p>
+              <p className="text-xs text-text-muted">{user?.role}</p>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-xl relative transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-surface-app"></span>
-              </button>
-              <div className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-[10px] font-black text-on-secondary-container border border-outline-variant cursor-pointer hover:scale-105 transition-transform">
-                {user?.username?.substring(0, 2).toUpperCase()}
-              </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3 w-full text-accent-red bg-accent-red/10 rounded-xl"
+            >
+              <LogOut className="w-5 h-5" />
+              Выйти
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden pt-16 md:pt-0">
+        <header className="hidden md:flex h-16 bg-dark-surface border-b border-dark-border items-center justify-between px-8 sticky top-0 z-10">
+          <h2 className="text-lg font-medium text-text-muted">Рабочая область</h2>
+          <div className="flex items-center gap-4">
+            <button className="relative p-2 text-text-muted hover:text-white transition-colors rounded-full hover:bg-dark-surface-light">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-accent-red rounded-full border-2 border-dark-surface"></span>
+            </button>
+            <div className="h-8 w-8 bg-primary/20 text-primary border border-primary/30 rounded-full flex items-center justify-center font-bold text-sm">
+              {user?.name?.charAt(0) || 'U'}
             </div>
           </div>
         </header>
 
-        {/* Content Wrapper */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 overflow-y-auto bg-dark-bg">
           <Outlet />
         </div>
       </main>
-
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
     </div>
   );
 };

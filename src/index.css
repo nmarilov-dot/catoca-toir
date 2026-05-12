@@ -1,62 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  /* Material Design 3 Palette from User Reference */
-  --color-primary: #000000;
-  --color-primary-container: #0b1c34;
-  --color-on-primary: #ffffff;
-  --color-on-primary-container: #7584a1;
+  --color-primary: #2a3b8c;
+  --color-primary-dark: #1e2a66;
+  --color-accent-red: #e11d48;
+  --color-accent-yellow: #f59e0b;
+  --color-dark-bg: #111827;
+  --color-dark-surface: #1f2937;
+  --color-dark-surface-light: #374151;
+  --color-dark-border: #374151;
+  --color-text-main: #f3f4f6;
+  --color-text-muted: #9ca3af;
   
-  --color-secondary: #545f72;
-  --color-secondary-container: #d5e0f7;
-  --color-on-secondary-container: #586377;
-  
-  --color-tertiary: #c2410c; /* Warm accent from previous turn */
-  --color-tertiary-container: #2f1500;
-  
-  --color-bg-app: #f7f9fb;
-  --color-surface-app: #ffffff;
-  --color-surface-container: #eceef0;
-  --color-surface-container-low: #f2f4f6;
-  --color-surface-container-high: #e6e8ea;
-  
-  --color-outline-variant: #c5c6ce;
-  --color-on-surface: #191c1e;
-  --color-on-surface-variant: #44474d;
-  
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
-
-  /* Custom aliases for existing code */
-  --color-text-main: #191c1e;
-  --color-text-muted: #44474d;
-  --color-border-app: #c5c6ce;
+  /* Алиасы для обратной совместимости */
+  --color-bg-app: #111827;
+  --color-surface-app: #1f2937;
+  --color-surface-app-light: #374151;
+  --color-border-app: #374151;
 }
 
 body {
-  @apply bg-bg-app text-on-surface font-sans antialiased transition-colors duration-300;
+  @apply bg-dark-bg text-text-main font-sans antialiased;
 }
 
-/* Material Typography Overrides */
-h1, h2, h3, h4 {
-  @apply tracking-tight;
-}
-
-/* Scrollbar styling */
+/* Scrollbar styling for dark theme */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-surface-container;
+  @apply bg-dark-bg;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-outline-variant rounded-full;
+  @apply bg-dark-border rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-on-surface-variant/30;
+  @apply bg-dark-surface-light;
 }
